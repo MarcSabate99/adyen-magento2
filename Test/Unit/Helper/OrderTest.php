@@ -66,6 +66,32 @@ class OrderTest extends AbstractAdyenTestCase
         $orderHelper->finalizeOrder($order, $notification);
     }
 
+    public function testFinalizeOrderWithOrderStatusCardHold()
+    {
+        $dataHelper = $this->createConfiguredMock(Data::class, ['formatAmount' => 'EUR123']);
+        $adyenPaymentOrderHelper = $this->createConfiguredMock(AdyenOrderPayment::class, ['isFullAmountFinalized' => true]);
+        $configHelper = $this->createConfiguredMock(Config::class, ['getConfigData' => 'payment_authorized']);
+        $chargedCurrency = $this->createConfiguredMock(ChargedCurrency::class, [
+            'getOrderAmountCurrency' => new AdyenAmountCurrency(1000, 'EUR')
+        ]);
+
+        $orderHelper = $this->createOrderHelper(
+            $this->createOrderStatusCollection(MagentoOrder::STATE_PROCESSING),
+            $configHelper,
+            $adyenPaymentOrderHelper,
+            $chargedCurrency,
+            $dataHelper
+        );
+
+        $order = $this->createOrder();
+        $notification = $this->createWebhookWithSucessNotifcation();
+
+
+        $order->expects($this->once())->method('setState')->with(MagentoOrder::STATE_PROCESSING);
+        $order->expects($this->once())->method('setStatus')->with("CREDIT_CARD_HOLD");
+        $orderHelper->finalizeOrder($order, $notification);
+    }
+
     public function testFinalizeOrderPartialPayment()
     {
         $dataHelper = $this->createConfiguredMock(Data::class, ['formatAmount' => 'EUR123']);

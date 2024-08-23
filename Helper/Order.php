@@ -35,6 +35,8 @@ use Magento\Sales\Model\ResourceModel\Order\Status\CollectionFactory as OrderSta
 
 class Order extends AbstractHelper
 {
+    private const CREDIT_CARD_HOLD = 'CREDIT_CARD_HOLD';
+
     /** @var Builder */
     private $transactionBuilder;
 
@@ -259,6 +261,21 @@ class Order extends AbstractHelper
         // virtual order can have different statuses
         if ($order->getIsVirtual()) {
             $status = $this->getVirtualStatus($order, $status);
+        }
+
+        if($notification->isSuccessful() &&
+            $order->getPayment()->getMethod() === PaymentMethods::ADYEN_CC
+        ) {
+            //Could be changed using config repo
+            $status = self::CREDIT_CARD_HOLD;
+            $order->setStatus($status);
+            $this->adyenLogger->addAdyenNotification(
+                'Order status is changed to Post_authorized status, status is ' . $status,
+                [
+                    'pspReference' => $order->getPayment()->getData('adyen_psp_reference'),
+                    'merchantReference' => $order->getPayment()->getData('entity_id')
+                ]
+            );
         }
 
         // check for boleto if payment is totally paid

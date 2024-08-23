@@ -77,6 +77,19 @@ abstract class AbstractAdyenTestCase extends TestCase
         ]);
     }
 
+    protected function createWebhookWithSucessNotifcation(?string $originalReference = null, ?string $pspReference = null)
+    {
+        return $this->createConfiguredMock(Notification::class, [
+            'getAmountValue' => 1000,
+            'getEventCode' => 'AUTHORISATION',
+            'getAmountCurrency' => 'EUR',
+            'getOriginalReference' => $originalReference,
+            'getPspreference' => $pspReference,
+            'isSuccessful' => true
+        ]);
+    }
+
+
     protected function createOrderStatusCollection($state): MockObject
     {
         $orderStatus = $this->createMockWithMethods(MagentoOrder\Status::class, [], ['getState']);
